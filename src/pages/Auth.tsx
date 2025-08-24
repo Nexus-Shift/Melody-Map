@@ -98,6 +98,7 @@ const Auth = () => {
                           type="email"
                           placeholder="Enter your email"
                           className="pl-10 bg-glass-bg/50 border-glass-border"
+                          autoComplete="email"
                           {...register("email", { 
                             required: "Email is required",
                             pattern: {
@@ -121,6 +122,7 @@ const Auth = () => {
                           type="password"
                           placeholder="Enter your password"
                           className="pl-10 bg-glass-bg/50 border-glass-border"
+                          autoComplete="current-password"
                           {...register("password", { 
                             required: "Password is required",
                             minLength: {
@@ -146,6 +148,7 @@ const Auth = () => {
                           type="text"
                           placeholder="Choose a username"
                           className="pl-10 bg-glass-bg/50 border-glass-border"
+                          autoComplete="username"
                           {...register("username", {
                             pattern: {
                               value: /^[a-zA-Z0-9_]+$/,
@@ -179,6 +182,7 @@ const Auth = () => {
                           type="email"
                           placeholder="Enter your email"
                           className="pl-10 bg-glass-bg/50 border-glass-border"
+                          autoComplete="email"
                           {...register("email", { 
                             required: "Email is required",
                             pattern: {
@@ -202,6 +206,7 @@ const Auth = () => {
                           type="password"
                           placeholder="Create a password"
                           className="pl-10 bg-glass-bg/50 border-glass-border"
+                          autoComplete="new-password"
                           {...register("password", { 
                             required: "Password is required",
                             minLength: {

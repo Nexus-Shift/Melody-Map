@@ -50,19 +50,19 @@ const Dashboard = () => {
       {/* Header */}
       <header className="border-b border-glass-border bg-gradient-card backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
               <Music className="w-4 h-4 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <div className="text-left">
+              <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent leading-none text-left py-1">
                 Melody Map
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground leading-none mt-1 text-left">
                 Welcome back, {user.displayName || user.username || user.email?.split('@')[0]}
               </p>
             </div>
-          </div>
+          </button>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <DropdownMenu>

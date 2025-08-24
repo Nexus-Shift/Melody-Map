@@ -114,15 +114,17 @@ const Settings = () => {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
-            <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
-              <Music className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Melody Map
-              </h1>
-              <p className="text-sm text-muted-foreground">Settings</p>
-            </div>
+            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
+                <Music className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <div className="text-left">
+                <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent leading-none text-left">
+                  Melody Map
+                </h1>
+                <p className="text-sm text-muted-foreground leading-none mt-1 text-left">Settings</p>
+              </div>
+            </button>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
