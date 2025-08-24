@@ -3,6 +3,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 export interface User {
   id: string;
   email: string;
+  username?: string;
+  displayName?: string;
 }
 
 export interface Profile {
@@ -47,10 +49,10 @@ class ApiClient {
   }
 
   // Authentication methods
-  async signUp(email: string, password: string) {
+  async signUp(email: string, password: string, username?: string) {
     return this.request<{ message: string; user: User }>('/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, username }),
     });
   }
 
@@ -77,7 +79,7 @@ class ApiClient {
   }
 
   async updateProfile(data: { display_name?: string; avatar_url?: string }) {
-    return this.request<{ profile: Profile }>('/user/profile', {
+    return this.request<{ profile: Profile; user: User }>('/user/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
     });

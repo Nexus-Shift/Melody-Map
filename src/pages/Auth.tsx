@@ -6,12 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Lock, Sparkles, ArrowLeft } from "lucide-react";
+import { Mail, Lock, Sparkles, ArrowLeft, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface AuthFormData {
   email: string;
   password: string;
+  username?: string;
 }
 
 const Auth = () => {
@@ -32,7 +33,7 @@ const Auth = () => {
     if (activeTab === "signin") {
       await signIn(data.email, data.password);
     } else {
-      await signUp(data.email, data.password);
+      await signUp(data.email, data.password, data.username);
     }
     reset();
   };
@@ -136,6 +137,39 @@ const Auth = () => {
                   </TabsContent>
 
                   <TabsContent value="signup" className="space-y-4 mt-0">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-username">Username (Optional)</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-username"
+                          type="text"
+                          placeholder="Choose a username"
+                          className="pl-10 bg-glass-bg/50 border-glass-border"
+                          {...register("username", {
+                            pattern: {
+                              value: /^[a-zA-Z0-9_]+$/,
+                              message: "Username can only contain letters, numbers, and underscores"
+                            },
+                            minLength: {
+                              value: 3,
+                              message: "Username must be at least 3 characters"
+                            },
+                            maxLength: {
+                              value: 20,
+                              message: "Username must be less than 20 characters"
+                            }
+                          })}
+                        />
+                      </div>
+                      {errors.username && (
+                        <p className="text-sm text-destructive">{errors.username.message}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Leave empty to use your email prefix as username
+                      </p>
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="signup-email">Email</Label>
                       <div className="relative">
