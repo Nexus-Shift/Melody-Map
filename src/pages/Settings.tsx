@@ -23,10 +23,12 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Music, User, Settings as SettingsIcon, LogOut, Bell, Shield, Palette, Globe } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { useToast } from "@/hooks/use-toast";
 
 const Settings = () => {
   const { user, signOut, loading } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -43,7 +45,6 @@ const Settings = () => {
       allowDataCollection: true,
     },
     preferences: {
-      theme: "dark",
       language: "en",
       timezone: "auto",
     },
@@ -61,6 +62,15 @@ const Settings = () => {
   };
 
   const handleSettingChange = (category: string, setting: string, value: boolean | string) => {
+    if (category === 'theme') {
+      setTheme(value as 'light' | 'dark' | 'system');
+      toast({
+        title: "Theme updated",
+        description: `Theme changed to ${value}`,
+      });
+      return;
+    }
+
     setSettings(prev => ({
       ...prev,
       [category]: {
@@ -295,8 +305,8 @@ const Settings = () => {
                   </p>
                 </div>
                 <Select
-                  value={settings.preferences.theme}
-                  onValueChange={(value) => handleSettingChange("preferences", "theme", value)}
+                  value={theme}
+                  onValueChange={(value) => handleSettingChange("theme", "theme", value)}
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue />
