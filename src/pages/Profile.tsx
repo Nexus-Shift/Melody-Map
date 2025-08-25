@@ -62,8 +62,9 @@ const Profile = () => {
       });
       
       // Update the user context with new data
-      // Note: You might need to add a method to update user in useAuth hook
-      
+      if (typeof updateUser === "function") {
+        updateUser(updatedUser);
+      }
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
