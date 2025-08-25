@@ -25,6 +25,9 @@ import { ArrowLeft, Music, User, Settings as SettingsIcon, LogOut, Bell, Shield,
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { useToast } from "@/hooks/use-toast";
+import { apiClient, Profile } from "@/lib/api";
+import { getDisplayAvatarUrl, getAvatarFallback } from "@/lib/avatar";
+import DefaultAvatar from "@/components/DefaultAvatar";
 
 // Enum definitions
 enum SettingCategory {
@@ -43,6 +46,7 @@ const Settings = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [profile, setProfile] = useState<Profile | null>(null);
   
   const [settings, setSettings] = useState({
     notifications: {
@@ -67,6 +71,21 @@ const Settings = () => {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        try {
+          const { profile } = await apiClient.getProfile();
+          setProfile(profile);
+        } catch (error) {
+          console.log('Profile not found:', error);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -151,9 +170,21 @@ const Settings = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="" alt={user.email} />
+                  {(() => {
+                    const avatarUrl = getDisplayAvatarUrl(profile?.avatar_url, user.email || "", 32, true);
+                    
+                    if (avatarUrl) {
+                      return <AvatarImage src={avatarUrl} alt={user.email} />;
+                    } else {
+                      return (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <DefaultAvatar size={32} />
+                        </div>
+                      );
+                    }
+                  })()}
                   <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                    {user.email?.charAt(0).toUpperCase()}
+                    {getAvatarFallback(profile?.display_name, user.username, user.email || "")}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -161,7 +192,7 @@ const Settings = () => {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.displayName || user.username}</p>
+                  <p className="text-sm font-medium leading-none">{profile?.display_name || user.displayName || user.username}</p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user.email}
                   </p>

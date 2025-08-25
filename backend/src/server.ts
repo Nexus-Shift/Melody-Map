@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import musicRoutes from './routes/music';
+import uploadRoutes from './routes/upload';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
 
@@ -46,6 +47,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/user', authenticate, userRoutes);
 app.use('/api/music', authenticate, musicRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Error handling
 app.use(errorHandler);
