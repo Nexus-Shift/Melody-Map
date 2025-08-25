@@ -60,11 +60,11 @@ const Profile = () => {
         display_name: formData.displayName,
         avatar_url: formData.avatar || undefined,
       });
-      
-      // Update the user context with new data
-      if (typeof updateUser === "function") {
-        updateUser(updatedUser);
-      }
+
+      //TODO: Update the user context with new data
+      // if (typeof updateUser === "function") {
+      //   updateUser(updatedUser);
+      // }
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
