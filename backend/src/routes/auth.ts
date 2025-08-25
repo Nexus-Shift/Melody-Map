@@ -11,6 +11,7 @@ const router = express.Router();
 router.post('/signup', [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
+  body('username').optional().isLength({ min: 3, max: 20 }).matches(/^[a-zA-Z0-9_]+$/),
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -18,7 +19,7 @@ router.post('/signup', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { email, password, username } = req.body;
 
     // Check if user already exists
     const existingUser = await db('users').where('email', email).first();
@@ -26,14 +27,25 @@ router.post('/signup', [
       return res.status(409).json({ error: 'User already exists' });
     }
 
+    // Check if username already exists (if provided)
+    if (username) {
+      const existingUsername = await db('users').where('username', username).first();
+      if (existingUsername) {
+        return res.status(409).json({ error: 'Username already taken' });
+      }
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create user
     const userId = uuidv4();
+    const finalUsername = username || email.split('@')[0];
+    
     await db('users').insert({
       id: userId,
       email,
+      username: finalUsername,
       password: hashedPassword,
       created_at: new Date(),
       updated_at: new Date(),
@@ -43,7 +55,7 @@ router.post('/signup', [
     await db('profiles').insert({
       id: uuidv4(),
       user_id: userId,
-      display_name: email.split('@')[0],
+      display_name: finalUsername,
       created_at: new Date(),
       updated_at: new Date(),
     });
@@ -65,7 +77,12 @@ router.post('/signup', [
 
     res.status(201).json({
       message: 'User created successfully',
-      user: { id: userId, email },
+      user: { 
+        id: userId, 
+        email, 
+        username: finalUsername,
+        displayName: finalUsername 
+      },
     });
   } catch (error) {
     console.error('Signup error:', error);
@@ -86,11 +103,13 @@ router.post('/signin', [
 
     const { email, password } = req.body;
 
-    // Find user
+    // Find user and profile
     const user = await db('users').where('email', email).first();
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    const profile = await db('profiles').where('user_id', user.id).first();
 
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.password);
@@ -115,7 +134,12 @@ router.post('/signin', [
 
     res.json({
       message: 'Signed in successfully',
-      user: { id: user.id, email: user.email },
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        username: user.username,
+        displayName: profile?.display_name || user.username || user.email.split('@')[0]
+      },
     });
   } catch (error) {
     console.error('Signin error:', error);
@@ -144,8 +168,15 @@ router.get('/me', async (req, res) => {
       return res.status(401).json({ error: 'User not found' });
     }
 
+    const profile = await db('profiles').where('user_id', user.id).first();
+
     res.json({
-      user: { id: user.id, email: user.email },
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        username: user.username,
+        displayName: profile?.display_name || user.username || user.email.split('@')[0]
+      },
     });
   } catch (error) {
     res.status(401).json({ error: 'Invalid token' });
