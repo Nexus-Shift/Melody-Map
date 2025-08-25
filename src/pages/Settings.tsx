@@ -75,18 +75,23 @@ const Settings = () => {
       return;
     }
 
-    setSettings(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category as keyof typeof prev],
-        [setting]: value
-      }
-    }));
-    
-    toast({
-      title: "Setting updated",
-      description: "Your preferences have been saved.",
-    });
+    if (category === "notifications" || category === "privacy" || category === "preferences") {
+      setSettings(prev => ({
+        ...prev,
+        [category]: {
+          ...prev[category],
+          [setting]: value
+        }
+      }));
+
+      toast({
+        title: "Setting updated",
+        description: "Your preferences have been saved.",
+      });
+    } else {
+      // Optionally, handle invalid category error
+      console.warn(`Invalid settings category: ${category}`);
+    }
   };
 
   if (loading) {
