@@ -61,8 +61,12 @@ const Settings = () => {
     navigate("/");
   };
 
-  const handleSettingChange = (category: string, setting: string, value: boolean | string) => {
-    if (category === 'theme') {
+  const handleSettingChange = (
+    category: SettingCategory,
+    setting: NotificationSetting | PrivacySetting | PreferencesSetting | "theme",
+    value: boolean | string
+  ) => {
+    if (category === SettingCategory.Theme) {
       setTheme(value as 'light' | 'dark' | 'system');
       toast({
         title: "Theme updated",
