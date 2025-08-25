@@ -22,10 +22,11 @@ const Auth = () => {
   
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<AuthFormData>();
 
-  // Redirect authenticated users
+  // Redirect authenticated users to dashboard
   useEffect(() => {
+    // If user is authenticated and loading is complete, redirect to dashboard
     if (user && !loading) {
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     }
   }, [user, loading, navigate]);
 
@@ -39,6 +40,17 @@ const Auth = () => {
   };
 
   if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center animate-pulse">
+          <Sparkles className="w-6 h-6 text-primary-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render auth form if user is already authenticated
+  if (user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center animate-pulse">
