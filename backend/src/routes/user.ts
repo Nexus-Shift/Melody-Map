@@ -1,54 +1,56 @@
-import express from 'express';
-import { AuthRequest } from '../middleware/auth';
-import { db } from '../config/database';
+import express from "express";
+import { AuthRequest } from "../middleware/auth";
+import { db } from "../config/database";
 
 const router = express.Router();
 
 // Get user profile
-router.get('/profile', async (req: AuthRequest, res) => {
+router.get("/profile", async (req: AuthRequest, res) => {
   try {
-    const profile = await db('profiles').where('user_id', req.user!.id).first();
-    
+    const profile = await db("profiles")
+      .where("user_id", req.authUser!.id)
+      .first();
+
     if (!profile) {
-      return res.status(404).json({ error: 'Profile not found' });
+      return res.status(404).json({ error: "Profile not found" });
     }
 
     res.json({ profile });
   } catch (error) {
-    console.error('Get profile error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Get profile error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // Update user profile
-router.put('/profile', async (req: AuthRequest, res) => {
+router.put("/profile", async (req: AuthRequest, res) => {
   try {
     const { display_name, avatar_url } = req.body;
 
     // Update profile
-    await db('profiles')
-      .where('user_id', req.user!.id)
-      .update({
-        display_name,
-        avatar_url,
-        updated_at: new Date(),
-      });
+    await db("profiles").where("user_id", req.authUser!.id).update({
+      display_name,
+      avatar_url,
+      updated_at: new Date(),
+    });
 
-    const updatedProfile = await db('profiles').where('user_id', req.user!.id).first();
-    const updatedUser = await db('users').where('id', req.user!.id).first();
-    
-    res.json({ 
+    const updatedProfile = await db("profiles")
+      .where("user_id", req.authUser!.id)
+      .first();
+    const updatedUser = await db("users").where("id", req.authUser!.id).first();
+
+    res.json({
       profile: updatedProfile,
       user: {
         id: updatedUser.id,
         email: updatedUser.email,
         username: updatedUser.username,
-        displayName: updatedProfile?.display_name || updatedUser.username
-      }
+        displayName: updatedProfile?.display_name || updatedUser.username,
+      },
     });
   } catch (error) {
-    console.error('Update profile error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
