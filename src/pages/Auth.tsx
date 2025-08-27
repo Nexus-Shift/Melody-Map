@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,8 +25,13 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState("signin");
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
-  
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<AuthFormData>();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<AuthFormData>();
 
   // Redirect authenticated users
   useEffect(() => {
@@ -54,7 +65,7 @@ const Auth = () => {
       <div className="absolute inset-0 bg-gradient-subtle opacity-50" />
       <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-primary rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
       <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-secondary rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" />
-      
+
       <div className="relative z-10 container mx-auto px-4 min-h-screen flex items-center justify-center">
         <div className="w-full max-w-md">
           {/* Back Button */}
@@ -79,14 +90,18 @@ const Auth = () => {
                 Sign in to your account or create a new one
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="signin">Sign In</TabsTrigger>
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>
                 </TabsList>
-                
+
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <TabsContent value="signin" className="space-y-4 mt-0">
                     <div className="space-y-2">
@@ -99,20 +114,22 @@ const Auth = () => {
                           placeholder="Enter your email"
                           className="pl-10 bg-glass-bg/50 border-glass-border"
                           autoComplete="email"
-                          {...register("email", { 
+                          {...register("email", {
                             required: "Email is required",
                             pattern: {
                               value: /^\S+@\S+$/i,
-                              message: "Invalid email address"
-                            }
+                              message: "Invalid email address",
+                            },
                           })}
                         />
                       </div>
                       {errors.email && (
-                        <p className="text-sm text-destructive">{errors.email.message}</p>
+                        <p className="text-sm text-destructive">
+                          {errors.email.message}
+                        </p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="signin-password">Password</Label>
                       <div className="relative">
@@ -123,24 +140,28 @@ const Auth = () => {
                           placeholder="Enter your password"
                           className="pl-10 bg-glass-bg/50 border-glass-border"
                           autoComplete="current-password"
-                          {...register("password", { 
+                          {...register("password", {
                             required: "Password is required",
                             minLength: {
                               value: 6,
-                              message: "Password must be at least 6 characters"
-                            }
+                              message: "Password must be at least 6 characters",
+                            },
                           })}
                         />
                       </div>
                       {errors.password && (
-                        <p className="text-sm text-destructive">{errors.password.message}</p>
+                        <p className="text-sm text-destructive">
+                          {errors.password.message}
+                        </p>
                       )}
                     </div>
                   </TabsContent>
 
                   <TabsContent value="signup" className="space-y-4 mt-0">
                     <div className="space-y-2">
-                      <Label htmlFor="signup-username">Username (Optional)</Label>
+                      <Label htmlFor="signup-username">
+                        Username (Optional)
+                      </Label>
                       <div className="relative">
                         <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -152,21 +173,25 @@ const Auth = () => {
                           {...register("username", {
                             pattern: {
                               value: /^[a-zA-Z0-9_]+$/,
-                              message: "Username can only contain letters, numbers, and underscores"
+                              message:
+                                "Username can only contain letters, numbers, and underscores",
                             },
                             minLength: {
                               value: 3,
-                              message: "Username must be at least 3 characters"
+                              message: "Username must be at least 3 characters",
                             },
                             maxLength: {
                               value: 20,
-                              message: "Username must be less than 20 characters"
-                            }
+                              message:
+                                "Username must be less than 20 characters",
+                            },
                           })}
                         />
                       </div>
                       {errors.username && (
-                        <p className="text-sm text-destructive">{errors.username.message}</p>
+                        <p className="text-sm text-destructive">
+                          {errors.username.message}
+                        </p>
                       )}
                       <p className="text-xs text-muted-foreground">
                         Leave empty to use your email prefix as username
@@ -183,20 +208,22 @@ const Auth = () => {
                           placeholder="Enter your email"
                           className="pl-10 bg-glass-bg/50 border-glass-border"
                           autoComplete="email"
-                          {...register("email", { 
+                          {...register("email", {
                             required: "Email is required",
                             pattern: {
                               value: /^\S+@\S+$/i,
-                              message: "Invalid email address"
-                            }
+                              message: "Invalid email address",
+                            },
                           })}
                         />
                       </div>
                       {errors.email && (
-                        <p className="text-sm text-destructive">{errors.email.message}</p>
+                        <p className="text-sm text-destructive">
+                          {errors.email.message}
+                        </p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Password</Label>
                       <div className="relative">
@@ -207,34 +234,40 @@ const Auth = () => {
                           placeholder="Create a password"
                           className="pl-10 bg-glass-bg/50 border-glass-border"
                           autoComplete="new-password"
-                          {...register("password", { 
+                          {...register("password", {
                             required: "Password is required",
                             minLength: {
                               value: 6,
-                              message: "Password must be at least 6 characters"
-                            }
+                              message: "Password must be at least 6 characters",
+                            },
                           })}
                         />
                       </div>
                       {errors.password && (
-                        <p className="text-sm text-destructive">{errors.password.message}</p>
+                        <p className="text-sm text-destructive">
+                          {errors.password.message}
+                        </p>
                       )}
                     </div>
                   </TabsContent>
 
-                  <Button 
-                    type="submit" 
-                    variant="hero" 
+                  <Button
+                    type="submit"
+                    variant="hero"
                     className="w-full mt-6"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                        {activeTab === "signin" ? "Signing In..." : "Creating Account..."}
+                        {activeTab === "signin"
+                          ? "Signing In..."
+                          : "Creating Account..."}
                       </>
+                    ) : activeTab === "signin" ? (
+                      "Sign In"
                     ) : (
-                      activeTab === "signin" ? "Sign In" : "Create Account"
+                      "Create Account"
                     )}
                   </Button>
                 </form>

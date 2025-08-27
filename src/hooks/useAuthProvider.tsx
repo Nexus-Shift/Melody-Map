@@ -1,24 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { apiClient, User } from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
-
-interface AuthContextType {
-  user: User | null;
-  signUp: (email: string, password: string, username?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signOut: () => Promise<{ error: any }>;
-  loading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+import { useEffect, useState, ReactNode } from "react";
+import { apiClient, User } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { AuthContext } from "@/hooks/auth-context";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -49,18 +32,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const { user } = await apiClient.signUp(email, password, username);
       setUser(user);
-      
+
       toast({
         title: "Account created successfully",
         description: "Welcome to Melody Map!",
       });
-      
+
       return { error: null };
     } catch (error: any) {
       toast({
         title: "Sign up failed",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
       return { error };
     }
@@ -70,18 +53,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const { user } = await apiClient.signIn(email, password);
       setUser(user);
-      
+
       toast({
         title: "Signed in successfully",
         description: "Welcome back!",
       });
-      
+
       return { error: null };
     } catch (error: any) {
       toast({
         title: "Sign in failed",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
       return { error };
     }
@@ -91,31 +74,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       await apiClient.signOut();
       setUser(null);
-      
+
       toast({
         title: "Signed out successfully",
         description: "See you next time!",
       });
-      
+
       return { error: null };
     } catch (error: any) {
       toast({
         title: "Sign out failed",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
       return { error };
     }
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      signUp,
-      signIn,
-      signOut,
-      loading
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        signUp,
+        signIn,
+        signOut,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
