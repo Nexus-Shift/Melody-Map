@@ -17,8 +17,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         const { user } = await apiClient.getCurrentUser();
         setUser(user);
-      } catch (error) {
-        // User is not authenticated or token is invalid
+      } catch (error: any) {
+        // User is not authenticated or token is invalid - this is normal
+        // Don't show error toast for 401 as it's expected behavior
         setUser(null);
       } finally {
         setLoading(false);
@@ -61,12 +62,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       return { error: null };
     } catch (error: any) {
+      // Check if this is a Google auth user trying to use password
+      if (error.useGoogleAuth) {
+        return { error };
+      }
+
       toast({
         title: "Sign in failed",
         description: error.message,
         variant: "destructive",
       });
       return { error };
+    }
+  };
+
+  const signInWithGoogle = () => {
+    // Redirect to Google OAuth
+    window.location.href = `${
+      import.meta.env.VITE_API_URL || "http://localhost:3001/api"
+    }/auth/google`;
+  };
+
+  const canChangePassword = async (): Promise<boolean> => {
+    try {
+      const result = await apiClient.canChangePassword();
+      return result.canChangePassword;
+    } catch (error) {
+      return false;
     }
   };
 
@@ -97,8 +119,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         user,
         signUp,
         signIn,
+        signInWithGoogle,
         signOut,
         loading,
+        canChangePassword,
       }}
     >
       {children}
