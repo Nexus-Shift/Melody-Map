@@ -13,8 +13,10 @@ interface AuthContextType {
     username?: string
   ) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: () => void;
   signOut: () => Promise<{ error: any }>;
   loading: boolean;
+  canChangePassword: () => Promise<boolean>;
 }
 
 export const useAuth = () => {
