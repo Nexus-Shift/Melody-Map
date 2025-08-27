@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Music, TrendingUp, Clock, User, Settings } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth-context";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import DashboardPreview from "@/components/DashboardPreview";
 

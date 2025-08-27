@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,8 +20,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Music, User, Settings, LogOut, Camera, Save } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import {
+  ArrowLeft,
+  Music,
+  User,
+  Settings,
+  LogOut,
+  Camera,
+  Save,
+} from "lucide-react";
+import { useAuth } from "@/hooks/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/lib/api";
 
@@ -23,7 +37,7 @@ const Profile = () => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     displayName: "",
@@ -41,7 +55,8 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       setFormData({
-        displayName: user.displayName || user.username || user.email?.split('@')[0] || "",
+        displayName:
+          user.displayName || user.username || user.email?.split("@")[0] || "",
         username: user.username || "",
         bio: "",
         avatar: "",
@@ -73,16 +88,17 @@ const Profile = () => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to update profile. Please try again.",
+        description:
+          error.message || "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     }
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -115,7 +131,10 @@ const Profile = () => {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
-            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-3"
+            >
               <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
                 <Music className="w-4 h-4 text-primary-foreground" />
               </div>
@@ -123,7 +142,9 @@ const Profile = () => {
                 <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent leading-none text-left">
                   Melody Map
                 </h1>
-                <p className="text-sm text-muted-foreground leading-none mt-1 text-left">Profile Settings</p>
+                <p className="text-sm text-muted-foreground leading-none mt-1 text-left">
+                  Profile Settings
+                </p>
               </div>
             </button>
           </div>
@@ -141,7 +162,9 @@ const Profile = () => {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.displayName || user.username}</p>
+                  <p className="text-sm font-medium leading-none">
+                    {user.displayName || user.username}
+                  </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user.email}
                   </p>
@@ -233,7 +256,9 @@ const Profile = () => {
                 <Input
                   id="displayName"
                   value={formData.displayName}
-                  onChange={(e) => handleInputChange("displayName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("displayName", e.target.value)
+                  }
                   disabled={!isEditing}
                   placeholder="Enter your display name"
                 />
