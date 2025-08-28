@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,8 +27,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Music, User, Settings as SettingsIcon, LogOut, Bell, Shield, Palette, Globe } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import {
+  ArrowLeft,
+  Music,
+  User,
+  Settings as SettingsIcon,
+  LogOut,
+  Bell,
+  Shield,
+  Palette,
+  Globe,
+} from "lucide-react";
+import { useAuth } from "@/hooks/auth-context";
 import { useTheme } from "@/hooks/useTheme";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,11 +47,14 @@ enum SettingCategory {
   Notifications = "notifications",
   Privacy = "privacy",
   Preferences = "preferences",
-  Theme = "theme"
+  Theme = "theme",
 }
 
 type NotificationSetting = "email" | "push" | "weeklyReport" | "newFeatures";
-type PrivacySetting = "publicProfile" | "shareListeningHistory" | "allowDataCollection";
+type PrivacySetting =
+  | "publicProfile"
+  | "shareListeningHistory"
+  | "allowDataCollection";
 type PreferencesSetting = "language" | "timezone";
 
 const Settings = () => {
@@ -43,7 +62,7 @@ const Settings = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [settings, setSettings] = useState({
     notifications: {
       email: true,
@@ -75,11 +94,15 @@ const Settings = () => {
 
   const handleSettingChange = (
     category: SettingCategory,
-    setting: NotificationSetting | PrivacySetting | PreferencesSetting | "theme",
+    setting:
+      | NotificationSetting
+      | PrivacySetting
+      | PreferencesSetting
+      | "theme",
     value: boolean | string
   ) => {
     if (category === SettingCategory.Theme) {
-      setTheme(value as 'light' | 'dark' | 'system');
+      setTheme(value as "light" | "dark" | "system");
       toast({
         title: "Theme updated",
         description: `Theme changed to ${value}`,
@@ -87,13 +110,17 @@ const Settings = () => {
       return;
     }
 
-    if (category === SettingCategory.Notifications || category === SettingCategory.Privacy || category === SettingCategory.Preferences) {
-      setSettings(prev => ({
+    if (
+      category === SettingCategory.Notifications ||
+      category === SettingCategory.Privacy ||
+      category === SettingCategory.Preferences
+    ) {
+      setSettings((prev) => ({
         ...prev,
         [category]: {
           ...prev[category],
-          [setting]: value
-        }
+          [setting]: value,
+        },
       }));
 
       toast({
@@ -135,7 +162,10 @@ const Settings = () => {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
-            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-3"
+            >
               <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
                 <Music className="w-4 h-4 text-primary-foreground" />
               </div>
@@ -143,7 +173,9 @@ const Settings = () => {
                 <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent leading-none text-left">
                   Melody Map
                 </h1>
-                <p className="text-sm text-muted-foreground leading-none mt-1 text-left">Settings</p>
+                <p className="text-sm text-muted-foreground leading-none mt-1 text-left">
+                  Settings
+                </p>
               </div>
             </button>
           </div>
@@ -161,7 +193,9 @@ const Settings = () => {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.displayName || user.username}</p>
+                  <p className="text-sm font-medium leading-none">
+                    {user.displayName || user.username}
+                  </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user.email}
                   </p>
@@ -210,7 +244,13 @@ const Settings = () => {
                 </div>
                 <Switch
                   checked={settings.notifications.email}
-                  onCheckedChange={(checked) => handleSettingChange(SettingCategory.Notifications, "email", checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange(
+                      SettingCategory.Notifications,
+                      "email",
+                      checked
+                    )
+                  }
                 />
               </div>
               <Separator />
@@ -223,7 +263,13 @@ const Settings = () => {
                 </div>
                 <Switch
                   checked={settings.notifications.push}
-                  onCheckedChange={(checked) => handleSettingChange(SettingCategory.Notifications, "push", checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange(
+                      SettingCategory.Notifications,
+                      "push",
+                      checked
+                    )
+                  }
                 />
               </div>
               <Separator />
@@ -236,7 +282,13 @@ const Settings = () => {
                 </div>
                 <Switch
                   checked={settings.notifications.weeklyReport}
-                  onCheckedChange={(checked) => handleSettingChange(SettingCategory.Notifications, "weeklyReport", checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange(
+                      SettingCategory.Notifications,
+                      "weeklyReport",
+                      checked
+                    )
+                  }
                 />
               </div>
               <Separator />
@@ -249,7 +301,13 @@ const Settings = () => {
                 </div>
                 <Switch
                   checked={settings.notifications.newFeatures}
-                  onCheckedChange={(checked) => handleSettingChange(SettingCategory.Notifications, "newFeatures", checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange(
+                      SettingCategory.Notifications,
+                      "newFeatures",
+                      checked
+                    )
+                  }
                 />
               </div>
             </CardContent>
@@ -276,7 +334,13 @@ const Settings = () => {
                 </div>
                 <Switch
                   checked={settings.privacy.publicProfile}
-                  onCheckedChange={(checked) => handleSettingChange(SettingCategory.Privacy, "publicProfile", checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange(
+                      SettingCategory.Privacy,
+                      "publicProfile",
+                      checked
+                    )
+                  }
                 />
               </div>
               <Separator />
@@ -289,7 +353,13 @@ const Settings = () => {
                 </div>
                 <Switch
                   checked={settings.privacy.shareListeningHistory}
-                  onCheckedChange={(checked) => handleSettingChange(SettingCategory.Privacy, "shareListeningHistory", checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange(
+                      SettingCategory.Privacy,
+                      "shareListeningHistory",
+                      checked
+                    )
+                  }
                 />
               </div>
               <Separator />
@@ -302,7 +372,13 @@ const Settings = () => {
                 </div>
                 <Switch
                   checked={settings.privacy.allowDataCollection}
-                  onCheckedChange={(checked) => handleSettingChange(SettingCategory.Privacy, "allowDataCollection", checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange(
+                      SettingCategory.Privacy,
+                      "allowDataCollection",
+                      checked
+                    )
+                  }
                 />
               </div>
             </CardContent>
@@ -315,9 +391,7 @@ const Settings = () => {
                 <Palette className="w-5 h-5" />
                 Preferences
               </CardTitle>
-              <CardDescription>
-                Customize your app experience
-              </CardDescription>
+              <CardDescription>Customize your app experience</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
@@ -329,7 +403,9 @@ const Settings = () => {
                 </div>
                 <Select
                   value={theme}
-                  onValueChange={(value) => handleSettingChange(SettingCategory.Theme, "theme", value)}
+                  onValueChange={(value) =>
+                    handleSettingChange(SettingCategory.Theme, "theme", value)
+                  }
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue />
@@ -351,7 +427,13 @@ const Settings = () => {
                 </div>
                 <Select
                   value={settings.preferences.language}
-                  onValueChange={(value) => handleSettingChange(SettingCategory.Preferences, "language", value)}
+                  onValueChange={(value) =>
+                    handleSettingChange(
+                      SettingCategory.Preferences,
+                      "language",
+                      value
+                    )
+                  }
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue />
@@ -374,7 +456,13 @@ const Settings = () => {
                 </div>
                 <Select
                   value={settings.preferences.timezone}
-                  onValueChange={(value) => handleSettingChange(SettingCategory.Preferences, "timezone", value)}
+                  onValueChange={(value) =>
+                    handleSettingChange(
+                      SettingCategory.Preferences,
+                      "timezone",
+                      value
+                    )
+                  }
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue />
