@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth-context';
 import { getDisplayAvatarUrl, getAvatarFallback } from '@/lib/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient, Profile } from '@/lib/api';

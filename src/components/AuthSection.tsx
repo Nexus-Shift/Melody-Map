@@ -28,7 +28,7 @@ const AuthSection = forwardRef<HTMLElement>((props, ref) => {
             <Button 
               variant="hero" 
               className="w-full"
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/auth?tab=signup")}
             >
               Get Started
             </Button>
@@ -66,7 +66,7 @@ const AuthSection = forwardRef<HTMLElement>((props, ref) => {
             <p className="text-xs text-center text-muted-foreground">
               Already have an account?{" "}
               <button 
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/auth?tab=signin")}
                 className="text-primary hover:underline font-medium"
               >
                 Sign in

@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +19,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Music, TrendingUp, Clock, User, Settings } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth-context";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import DashboardPreview from "@/components/DashboardPreview";
 import { getDisplayAvatarUrl, getAvatarFallback } from "@/lib/avatar";
@@ -30,7 +36,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/auth");
+      // Redirect unauthenticated users to signup tab
+      navigate("/auth?tab=signup", { replace: true });
     }
   }, [user, loading, navigate]);
 
@@ -84,7 +91,10 @@ const Dashboard = () => {
       {/* Header */}
       <header className="border-b border-glass-border bg-gradient-card backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="flex items-center gap-3"
+          >
             <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
               <Music className="w-4 h-4 text-primary-foreground" />
             </div>
@@ -93,7 +103,8 @@ const Dashboard = () => {
                 Melody Map
               </h1>
               <p className="text-sm text-muted-foreground leading-none mt-1 text-left">
-                Welcome back, {user.displayName || user.username || user.email?.split('@')[0]}
+                Welcome back,{" "}
+                {user.displayName || user.username || user.email?.split("@")[0]}
               </p>
             </div>
           </button>
@@ -101,7 +112,10 @@ const Dashboard = () => {
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
                   <Avatar className="h-8 w-8">
                     {avatarUrl ? (
                       <AvatarImage 
@@ -157,7 +171,8 @@ const Dashboard = () => {
               Your Music Dashboard
             </CardTitle>
             <CardDescription>
-              Connect your music platforms to start tracking your listening journey
+              Connect your music platforms to start tracking your listening
+              journey
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -171,7 +186,7 @@ const Dashboard = () => {
                   <p className="text-xs text-muted-foreground">Coming Soon</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3 p-4 rounded-lg bg-glass-bg/30 border border-glass-border">
                 <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
                   <Music className="w-5 h-5 text-purple-400" />
@@ -181,7 +196,7 @@ const Dashboard = () => {
                   <p className="text-xs text-muted-foreground">Coming Soon</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3 p-4 rounded-lg bg-glass-bg/30 border border-glass-border">
                 <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center">
                   <Music className="w-5 h-5 text-orange-400" />

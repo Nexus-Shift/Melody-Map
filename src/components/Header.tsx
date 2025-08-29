@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserMenu } from './UserMenu';
 import { AvatarUpload } from './AvatarUpload';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth-context';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { apiClient, Profile } from '@/lib/api';
 import { getAvatarFallback } from '@/lib/avatar';

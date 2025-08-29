@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, Music, User, Settings, LogOut, Save, Upload, X, Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient, Profile as ProfileData } from "@/lib/api";
 import { getDisplayAvatarUrl, getAvatarFallback } from "@/lib/avatar";
@@ -25,7 +31,7 @@ const Profile = () => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [formData, setFormData] = useState({
@@ -40,7 +46,7 @@ const Profile = () => {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/auth");
+      navigate("/auth?tab=signup", { replace: true });
     }
   }, [user, loading, navigate]);
 
@@ -162,7 +168,8 @@ const Profile = () => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to update profile. Please try again.",
+        description:
+          error.message || "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -171,9 +178,9 @@ const Profile = () => {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
     setHasUnsavedChanges(true);
   };
@@ -227,7 +234,10 @@ const Profile = () => {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
-            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-3"
+            >
               <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
                 <Music className="w-4 h-4 text-primary-foreground" />
               </div>
@@ -235,7 +245,9 @@ const Profile = () => {
                 <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent leading-none text-left">
                   Melody Map
                 </h1>
-                <p className="text-sm text-muted-foreground leading-none mt-1 text-left">Profile Settings</p>
+                <p className="text-sm text-muted-foreground leading-none mt-1 text-left">
+                  Profile Settings
+                </p>
               </div>
             </button>
           </div>
@@ -471,7 +483,9 @@ const Profile = () => {
                 <Input
                   id="displayName"
                   value={formData.displayName}
-                  onChange={(e) => handleInputChange("displayName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("displayName", e.target.value)
+                  }
                   disabled={!isEditing}
                   placeholder="Enter your display name"
                 />

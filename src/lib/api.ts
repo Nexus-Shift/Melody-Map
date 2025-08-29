@@ -1,10 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 export interface User {
   id: string;
   email: string;
   username?: string;
   displayName?: string;
+  auth_provider: "local" | "google";
 }
 
 export interface Profile {
@@ -28,18 +30,18 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const config: RequestInit = {
-      credentials: 'include', // Include cookies
+      credentials: "include", // Include cookies
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options.headers,
       },
       ...options,
     };
 
     const response = await fetch(url, config);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || `HTTP ${response.status}`);
@@ -50,37 +52,50 @@ class ApiClient {
 
   // Authentication methods
   async signUp(email: string, password: string, username?: string) {
-    return this.request<{ message: string; user: User }>('/auth/signup', {
-      method: 'POST',
+    return this.request<{ message: string; user: User }>("/auth/signup", {
+      method: "POST",
       body: JSON.stringify({ email, password, username }),
     });
   }
 
   async signIn(email: string, password: string) {
-    return this.request<{ message: string; user: User }>('/auth/signin', {
-      method: 'POST',
+    return this.request<{ message: string; user: User }>("/auth/signin", {
+      method: "POST",
       body: JSON.stringify({ email, password }),
     });
   }
 
   async signOut() {
-    return this.request<{ message: string }>('/auth/signout', {
-      method: 'POST',
+    return this.request<{ message: string }>("/auth/signout", {
+      method: "POST",
     });
   }
 
   async getCurrentUser() {
-    return this.request<{ user: User }>('/auth/me');
+    return this.request<{ user: User }>("/auth/me");
+  }
+
+  async canChangePassword() {
+    return this.request<{ canChangePassword: boolean; auth_provider: string }>(
+      "/auth/can-change-password"
+    );
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    return this.request<{ message: string }>("/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
   }
 
   // Profile methods
   async getProfile() {
-    return this.request<{ profile: Profile }>('/user/profile');
+    return this.request<{ profile: Profile }>("/user/profile");
   }
 
   async updateProfile(data: { display_name?: string; avatar_url?: string }) {
-    return this.request<{ profile: Profile; user: User }>('/user/profile', {
-      method: 'PUT',
+    return this.request<{ profile: Profile; user: User }>("/user/profile", {
+      method: "PUT",
       body: JSON.stringify(data),
     });
   }
@@ -113,19 +128,25 @@ class ApiClient {
 
   // Music methods
   async getPlatforms() {
-    return this.request<{ platforms: Array<{ id: string; name: string; connected: boolean }> }>('/music/platforms');
+    return this.request<{
+      platforms: Array<{ id: string; name: string; connected: boolean }>;
+    }>("/music/platforms");
   }
 
   async getListeningHistory() {
-    return this.request<{ tracks: any[] }>('/music/history');
+    return this.request<{ tracks: any[] }>("/music/history");
   }
 
   async getTopGenres() {
-    return this.request<{ genres: any[] }>('/music/genres');
+    return this.request<{ genres: any[] }>("/music/genres");
   }
 
   async getListeningStats() {
-    return this.request<{ total_hours: number; total_tracks: number; total_artists: number }>('/music/stats');
+    return this.request<{
+      total_hours: number;
+      total_tracks: number;
+      total_artists: number;
+    }>("/music/stats");
   }
 }
 
