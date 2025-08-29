@@ -7,11 +7,12 @@ import dotenv from "dotenv";
 import passport from "./config/passport";
 import session from "express-session";
 
-import authRoutes from "./routes/auth";
-import userRoutes from "./routes/user";
-import musicRoutes from "./routes/music";
-import { errorHandler } from "./middleware/errorHandler";
-import { authenticate } from "./middleware/auth";
+import authRoutes from './routes/auth';
+import userRoutes from './routes/user';
+import musicRoutes from './routes/music';
+import uploadRoutes from './routes/upload';
+import { errorHandler } from './middleware/errorHandler';
+import { authenticate } from './middleware/auth';
 
 dotenv.config();
 
@@ -64,9 +65,10 @@ app.get("/health", (req, res) => {
 });
 
 // Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/user", authenticate, userRoutes);
-app.use("/api/music", authenticate, musicRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/user', authenticate, userRoutes);
+app.use('/api/music', authenticate, musicRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Error handling
 app.use(errorHandler);

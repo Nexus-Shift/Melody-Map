@@ -100,6 +100,32 @@ class ApiClient {
     });
   }
 
+  // Avatar upload methods
+  async uploadAvatar(file: File) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const url = `${this.baseURL}/upload/avatar`;
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async deleteAvatar() {
+    return this.request<{ message: string; profile: Profile }>('/upload/avatar', {
+      method: 'DELETE',
+    });
+  }
+
   // Music methods
   async getPlatforms() {
     return this.request<{

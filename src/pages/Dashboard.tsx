@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,25 +16,57 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Music, TrendingUp, Clock, User, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/auth-context";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import DashboardPreview from "@/components/DashboardPreview";
+import { getDisplayAvatarUrl, getAvatarFallback } from "@/lib/avatar";
+import { apiClient, Profile } from "@/lib/api";
+import { toast } from "@/hooks/use-toast";
+import { AvatarUpload } from "@/components/AvatarUpload";
+import DefaultAvatar from "@/components/DefaultAvatar";
 
 const Dashboard = () => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/auth");
+      // Redirect unauthenticated users to signup tab
+      navigate("/auth?tab=signup", { replace: true });
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        try {
+          const { profile } = await apiClient.getProfile();
+          setProfile(profile);
+        } catch (error) {
+          console.log('Profile not found:', error);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+  };
+
+  const handleUploadSuccess = (avatarUrl: string) => {
+    setShowUploadDialog(false);
+    // Refresh profile data
+    if (user) {
+      apiClient.getProfile().then(({ profile }) => setProfile(profile)).catch(() => setProfile(null));
+    }
   };
 
   if (loading) {
@@ -50,6 +82,9 @@ const Dashboard = () => {
   if (!user) {
     return null;
   }
+
+  const avatarUrl = getDisplayAvatarUrl(profile?.avatar_url, user.email, 32, true);
+  const fallbackText = getAvatarFallback(profile?.display_name, user.username, user.email);
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,9 +117,18 @@ const Dashboard = () => {
                   className="relative h-8 w-8 rounded-full"
                 >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="" alt={user.email} />
+                    {avatarUrl ? (
+                      <AvatarImage 
+                        src={avatarUrl} 
+                        alt={user.email} 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <DefaultAvatar size={32} />
+                      </div>
+                    )}
                     <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                      {user.email?.charAt(0).toUpperCase()}
+                      {fallbackText}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -92,9 +136,7 @@ const Dashboard = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {user.displayName || user.username}
-                    </p>
+                    <p className="text-sm font-medium leading-none">{profile?.display_name || user.displayName || user.username}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email}
                     </p>
@@ -171,6 +213,20 @@ const Dashboard = () => {
         {/* Dashboard Preview */}
         <DashboardPreview />
       </main>
+
+      {/* Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Profile Picture</DialogTitle>
+          </DialogHeader>
+          <AvatarUpload 
+            currentAvatarUrl={profile?.avatar_url}
+            fallbackText={fallbackText}
+            onUploadSuccess={handleUploadSuccess} 
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
