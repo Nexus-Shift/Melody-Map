@@ -9,13 +9,8 @@ const router = express.Router();
 // Upload avatar endpoint
 router.post('/avatar', authenticate, upload.single('avatar'), async (req: AuthRequest, res) => {
   try {
-    console.log('Upload request received');
-    console.log('User:', req.user?.id);
-    console.log('File:', req.file ? 'Present' : 'Missing');
-    
     // Check if Cloudinary is configured
     if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      console.error('Cloudinary not configured');
       return res.status(500).json({ error: 'Avatar upload is not configured. Please contact administrator.' });
     }
 
@@ -101,7 +96,6 @@ router.post('/avatar', authenticate, upload.single('avatar'), async (req: AuthRe
     });
 
   } catch (error: any) {
-    console.error('Avatar upload error:', error);
     res.status(500).json({ error: 'Failed to upload avatar' });
   }
 });
@@ -149,7 +143,6 @@ router.delete('/avatar', authenticate, async (req: AuthRequest, res) => {
     });
 
   } catch (error: any) {
-    console.error('Avatar delete error:', error);
     res.status(500).json({ error: 'Failed to delete avatar' });
   }
 });

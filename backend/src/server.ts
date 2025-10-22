@@ -10,9 +10,12 @@ import session from "express-session";
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import musicRoutes from './routes/music';
+import spotifyRoutes from './routes/spotify';
+import spotifyApiRoutes from './routes/spotify-api';
 import uploadRoutes from './routes/upload';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
+import { TokenRefreshScheduler } from './services/tokenRefreshScheduler';
 
 dotenv.config();
 
@@ -49,7 +52,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60 * 1000,
     },
   })
 );
@@ -65,8 +68,10 @@ app.get("/health", (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', spotifyRoutes);
 app.use('/api/user', authenticate, userRoutes);
 app.use('/api/music', authenticate, musicRoutes);
+app.use('/api/spotify', authenticate, spotifyApiRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Error handling
@@ -80,6 +85,9 @@ app.use("*", (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🎵 Melody Map Backend Ready!`);
+  
+  // Start token refresh scheduler
+  TokenRefreshScheduler.start();
 });
 
 export default app;

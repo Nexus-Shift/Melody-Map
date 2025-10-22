@@ -17,7 +17,6 @@ router.get("/profile", async (req: AuthRequest, res) => {
 
     res.json({ profile });
   } catch (error) {
-    console.error("Get profile error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -49,7 +48,6 @@ router.put("/profile", async (req: AuthRequest, res) => {
       },
     });
   } catch (error) {
-    console.error("Update profile error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

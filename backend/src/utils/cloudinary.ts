@@ -24,7 +24,6 @@ export const uploadToCloudinary = async (
       },
       (error, result) => {
         if (error) {
-          console.error('Cloudinary upload error:', error);
           reject(error);
         } else if (result) {
           resolve(result);
@@ -45,7 +44,6 @@ export const deleteFromCloudinary = async (publicId: string): Promise<void> => {
   try {
     await cloudinary.uploader.destroy(publicId);
   } catch (error) {
-    console.error('Error deleting image from Cloudinary:', error);
     // Don't throw error, as the main operation might still succeed
   }
 };
