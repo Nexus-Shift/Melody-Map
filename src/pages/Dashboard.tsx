@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Music, TrendingUp, Clock, User, Settings } from "lucide-react";
+import { LogOut, Music, TrendingUp, Clock, User, Settings, ListMusic } from "lucide-react";
 import { useAuth } from "@/hooks/auth-context";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { getDisplayAvatarUrl, getAvatarFallback } from "@/lib/avatar";
@@ -26,6 +26,7 @@ import { apiClient, Profile } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import DefaultAvatar from "@/components/DefaultAvatar";
+import { ExpandableMusicSection, TrackItem, ArtistItem, PlaylistItem } from "@/components/ExpandableMusicSection";
 
 const Dashboard = () => {
   const { user, signOut, loading } = useAuth();
@@ -42,9 +43,12 @@ const Dashboard = () => {
     stats?: any;
     topTracks?: any[];
     topArtists?: any[];
+    playlists?: any[];
     currentPlayback?: any;
   }>({});
   const [spotifyDataLoading, setSpotifyDataLoading] = useState(false);
+  const [tracksTimeRange, setTracksTimeRange] = useState<'short_term' | 'medium_term' | 'long_term'>('medium_term');
+  const [artistsTimeRange, setArtistsTimeRange] = useState<'short_term' | 'medium_term' | 'long_term'>('medium_term');
   
   useEffect(() => {
     if (!loading && !user) {
@@ -111,15 +115,13 @@ const Dashboard = () => {
   const fetchSpotifyData = async () => {
     setSpotifyDataLoading(true);
     try {
-      const [profileResult, statsResult, topTracksResult, topArtistsResult, currentPlaybackResult] = await Promise.allSettled([
+      const [profileResult, statsResult, currentPlaybackResult] = await Promise.allSettled([
         apiClient.getSpotifyProfile(),
         apiClient.getSpotifyStats(),
-        apiClient.getSpotifyTopTracks('medium_term', 5),
-        apiClient.getSpotifyTopArtists('medium_term', 5),
         apiClient.getSpotifyCurrentPlayback()
       ]);
 
-      const newSpotifyData: any = {};
+      const newSpotifyData: any = { ...spotifyData };
       
       if (profileResult.status === 'fulfilled') {
         newSpotifyData.profile = profileResult.value.profile;
@@ -129,24 +131,69 @@ const Dashboard = () => {
         newSpotifyData.stats = statsResult.value.stats;
       }
       
-      if (topTracksResult.status === 'fulfilled') {
-        newSpotifyData.topTracks = topTracksResult.value.tracks;
-      }
-      
-      if (topArtistsResult.status === 'fulfilled') {
-        newSpotifyData.topArtists = topArtistsResult.value.artists;
-      }
-      
       if (currentPlaybackResult.status === 'fulfilled') {
         newSpotifyData.currentPlayback = currentPlaybackResult.value;
       }
 
       setSpotifyData(newSpotifyData);
+      
+      // Fetch initial tracks and artists with default time ranges
+      await Promise.all([
+        fetchSpotifyTracks(tracksTimeRange),
+        fetchSpotifyArtists(artistsTimeRange),
+        fetchSpotifyPlaylists()
+      ]);
     } catch (error) {
       // Failed to fetch Spotify data, show error state in UI
     } finally {
       setSpotifyDataLoading(false);
     }
+  };
+
+  const fetchSpotifyTracks = async (timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term') => {
+    try {
+      const topTracksResult = await apiClient.getSpotifyTopTracks(timeRange, 50);
+      setSpotifyData(prev => ({
+        ...prev,
+        topTracks: topTracksResult.tracks
+      }));
+    } catch (error) {
+      console.error('Failed to fetch Spotify tracks:', error);
+    }
+  };
+
+  const fetchSpotifyArtists = async (timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term') => {
+    try {
+      const topArtistsResult = await apiClient.getSpotifyTopArtists(timeRange, 50);
+      setSpotifyData(prev => ({
+        ...prev,
+        topArtists: topArtistsResult.artists
+      }));
+    } catch (error) {
+      console.error('Failed to fetch Spotify artists:', error);
+    }
+  };
+
+  const fetchSpotifyPlaylists = async () => {
+    try {
+      const playlistsResult = await apiClient.getSpotifyPlaylists(50);
+      setSpotifyData(prev => ({
+        ...prev,
+        playlists: playlistsResult.playlists
+      }));
+    } catch (error) {
+      console.error('Failed to fetch Spotify playlists:', error);
+    }
+  };
+
+  const handleTracksTimeRangeChange = (newTimeRange: 'short_term' | 'medium_term' | 'long_term') => {
+    setTracksTimeRange(newTimeRange);
+    fetchSpotifyTracks(newTimeRange);
+  };
+
+  const handleArtistsTimeRangeChange = (newTimeRange: 'short_term' | 'medium_term' | 'long_term') => {
+    setArtistsTimeRange(newTimeRange);
+    fetchSpotifyArtists(newTimeRange);
   };
 
   // Handle Spotify connection callback
@@ -395,7 +442,7 @@ const Dashboard = () => {
             )}
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription>Listening Time (Est.)</CardDescription>
@@ -465,113 +512,73 @@ const Dashboard = () => {
                   </p>
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Playlists</CardDescription>
+                  <CardTitle className="text-2xl">
+                    {spotifyDataLoading ? '...' : 
+                     spotifyData.playlists ? spotifyData.playlists.length : '--'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    <ListMusic className="w-4 h-4 inline mr-1" />
+                    {spotifyDataLoading ? 'Loading...' : 
+                     spotifyData.playlists ? 'Created & followed' : 'Connect Spotify for data'}
+                  </p>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Top Tracks */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  Your Top Tracks
-                </CardTitle>
-                <CardDescription>
-                  Your most played songs this month
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {spotifyDataLoading ? (
-                  <div className="text-center py-8">
-                    <Music className="w-8 h-8 mx-auto mb-4 opacity-50 animate-pulse" />
-                    <p className="text-muted-foreground">Loading your top tracks...</p>
-                  </div>
-                ) : spotifyData.topTracks?.length ? (
-                  <div className="space-y-3">
-                    {spotifyData.topTracks.slice(0, 5).map((track: any, index: number) => (
-                      <div key={track.id} className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-sm font-medium">
-                          {index + 1}
-                        </div>
-                        {track.album.images?.[0] && (
-                          <img 
-                            src={track.album.images[0].url} 
-                            alt={track.album.name}
-                            className="w-12 h-12 rounded object-cover"
-                          />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{track.name}</p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {track.artists.map((artist: any) => artist.name).join(', ')}
-                          </p>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {Math.floor(track.duration_ms / 60000)}:
-                          {Math.floor((track.duration_ms % 60000) / 1000).toString().padStart(2, '0')}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No top tracks data available</p>
-                    <p className="text-sm">Listen to more music to see your favorites</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <ExpandableMusicSection
+              title="Your Top Tracks"
+              description="Your most played songs"
+              icon={<TrendingUp className="w-6 h-6 text-primary-foreground" />}
+              data={spotifyData.topTracks || []}
+              loading={spotifyDataLoading}
+              renderItem={(track: any, index: number) => (
+                <TrackItem key={track.id} track={track} index={index} />
+              )}
+              initialLimit={5}
+              timeRange={tracksTimeRange}
+              onTimeRangeChange={handleTracksTimeRangeChange}
+              showTimeSelector={true}
+              emptyMessage="No top tracks data available"
+            />
 
             {/* Top Artists */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Your Top Artists
-                </CardTitle>
-                <CardDescription>
-                  Artists you listen to the most
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {spotifyDataLoading ? (
-                  <div className="text-center py-8">
-                    <User className="w-8 h-8 mx-auto mb-4 opacity-50 animate-pulse" />
-                    <p className="text-muted-foreground">Loading your top artists...</p>
-                  </div>
-                ) : spotifyData.topArtists?.length ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {spotifyData.topArtists.slice(0, 4).map((artist: any) => (
-                      <div key={artist.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                        {artist.images?.[0] && (
-                          <img 
-                            src={artist.images[0].url} 
-                            alt={artist.name}
-                            className="w-12 h-12 rounded-full object-cover"
-                          />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{artist.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {artist.followers.total.toLocaleString()} followers
-                          </p>
-                          {artist.genres.length > 0 && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              {artist.genres.slice(0, 2).join(', ')}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No top artists data available</p>
-                    <p className="text-sm">Listen to more music to see your favorites</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <ExpandableMusicSection
+              title="Your Top Artists"
+              description="Artists you listen to the most"
+              icon={<User className="w-6 h-6 text-primary-foreground" />}
+              data={spotifyData.topArtists || []}
+              loading={spotifyDataLoading}
+              renderItem={(artist: any, index: number) => (
+                <ArtistItem key={artist.id} artist={artist} index={index} />
+              )}
+              initialLimit={5}
+              timeRange={artistsTimeRange}
+              onTimeRangeChange={handleArtistsTimeRangeChange}
+              showTimeSelector={true}
+              emptyMessage="No top artists data available"
+            />
+
+            {/* Top Playlists */}
+            <ExpandableMusicSection
+              title="Your Playlists"
+              description="Your created and followed playlists"
+              icon={<ListMusic className="w-6 h-6 text-primary-foreground" />}
+              data={spotifyData.playlists || []}
+              loading={spotifyDataLoading}
+              renderItem={(playlist: any, index: number) => (
+                <PlaylistItem key={playlist.id} playlist={playlist} index={index} />
+              )}
+              initialLimit={5}
+              showTimeSelector={false}
+              emptyMessage="No playlists found"
+            />
           </div>
         )}
       </main>

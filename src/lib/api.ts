@@ -239,6 +239,27 @@ class ApiClient {
       };
     }>("/spotify/stats");
   }
+
+  async getSpotifyPlaylists(limit: number = 50) {
+    return this.request<{
+      playlists: Array<{
+        id: string;
+        name: string;
+        description?: string;
+        owner: {
+          id: string;
+          display_name?: string;
+        };
+        public: boolean;
+        collaborative: boolean;
+        tracks: {
+          total: number;
+        };
+        images: Array<{ url: string; height: number; width: number }>;
+        external_urls: { spotify: string };
+      }>;
+    }>(`/spotify/playlists?limit=${limit}`);
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
