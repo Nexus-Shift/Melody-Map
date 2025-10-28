@@ -123,7 +123,6 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Signup error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -185,7 +184,6 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Signin error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -215,6 +213,11 @@ router.get("/me", async (req: express.Request, res: express.Response) => {
     }
 
     const profile = await db("profiles").where("user_id", user.id).first();
+    
+    // Get connected platforms
+    const connections = await db("platform_connections")
+      .where({ user_id: user.id, is_active: true })
+      .pluck("platform");
 
     res.json({
       user: {
@@ -224,6 +227,7 @@ router.get("/me", async (req: express.Request, res: express.Response) => {
         displayName:
           profile?.display_name || user.username || user.email.split("@")[0],
         auth_provider: user.auth_provider,
+        connectedPlatforms: connections,
       },
     });
   } catch (error) {
@@ -329,7 +333,6 @@ router.post(
 
       res.json({ message: "Password changed successfully" });
     } catch (error) {
-      console.error("Change password error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   }

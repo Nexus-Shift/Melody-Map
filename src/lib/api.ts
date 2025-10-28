@@ -7,6 +7,7 @@ export interface User {
   username?: string;
   displayName?: string;
   auth_provider: "local" | "google";
+  connectedPlatforms?: string[];
 }
 
 export interface Profile {
@@ -133,6 +134,8 @@ class ApiClient {
     }>("/music/platforms");
   }
 
+
+
   async getListeningHistory() {
     return this.request<{ tracks: any[] }>("/music/history");
   }
@@ -147,6 +150,94 @@ class ApiClient {
       total_tracks: number;
       total_artists: number;
     }>("/music/stats");
+  }
+
+  async testSpotifyConnection() {
+    return this.request<{
+      connected: boolean;
+      reason?: string;
+      spotifyUser?: {
+        id: string;
+        display_name?: string;
+        email?: string;
+      };
+    }>("/auth/test-connection");
+  }
+
+  // Spotify Data Methods
+  async getSpotifyProfile() {
+    return this.request<{
+      profile: {
+        id: string;
+        display_name?: string;
+        email?: string;
+        followers?: { total: number };
+        images?: Array<{ url: string; height: number; width: number }>;
+        country?: string;
+      };
+    }>("/spotify/profile");
+  }
+
+  async getSpotifyTopTracks(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', limit: number = 20) {
+    return this.request<{
+      tracks: Array<{
+        id: string;
+        name: string;
+        artists: Array<{ id: string; name: string }>;
+        album: {
+          id: string;
+          name: string;
+          images: Array<{ url: string; height: number; width: number }>;
+        };
+        duration_ms: number;
+        popularity: number;
+        preview_url?: string;
+        external_urls: { spotify: string };
+      }>;
+    }>(`/spotify/top-tracks?time_range=${timeRange}&limit=${limit}`);
+  }
+
+  async getSpotifyTopArtists(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', limit: number = 20) {
+    return this.request<{
+      artists: Array<{
+        id: string;
+        name: string;
+        genres: string[];
+        popularity: number;
+        followers: { total: number };
+        images: Array<{ url: string; height: number; width: number }>;
+        external_urls: { spotify: string };
+      }>;
+    }>(`/spotify/top-artists?time_range=${timeRange}&limit=${limit}`);
+  }
+
+  async getSpotifyRecentlyPlayed(limit: number = 20) {
+    return this.request<{
+      tracks: Array<{
+        track: any; // SpotifyTrack
+        played_at: string;
+      }>;
+    }>(`/spotify/recently-played?limit=${limit}`);
+  }
+
+  async getSpotifyCurrentPlayback() {
+    return this.request<{
+      isPlaying: boolean;
+      track?: any;
+      progress?: number;
+      device?: any;
+    }>("/spotify/current-playback");
+  }
+
+  async getSpotifyStats() {
+    return this.request<{
+      stats: {
+        totalTracks: number;
+        totalArtists: number;
+        topGenres: Array<{ genre: string; count: number }>;
+        listeningTimeEstimate: number;
+      };
+    }>("/spotify/stats");
   }
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +21,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Music, TrendingUp, Clock, User, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/auth-context";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import DashboardPreview from "@/components/DashboardPreview";
 import { getDisplayAvatarUrl, getAvatarFallback } from "@/lib/avatar";
 import { apiClient, Profile } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
@@ -31,9 +30,22 @@ import DefaultAvatar from "@/components/DefaultAvatar";
 const Dashboard = () => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-
+  // Get connections directly from user object (loaded during auth)
+  const connections = user?.connectedPlatforms || [];
+  const [actuallyConnected, setActuallyConnected] = useState<string[]>([]);
+  const [connectionTesting, setConnectionTesting] = useState(false);
+  const [spotifyData, setSpotifyData] = useState<{
+    profile?: any;
+    stats?: any;
+    topTracks?: any[];
+    topArtists?: any[];
+    currentPlayback?: any;
+  }>({});
+  const [spotifyDataLoading, setSpotifyDataLoading] = useState(false);
+  
   useEffect(() => {
     if (!loading && !user) {
       // Redirect unauthenticated users to signup tab
@@ -41,6 +53,7 @@ const Dashboard = () => {
     }
   }, [user, loading, navigate]);
 
+  // Fetch profile data and test actual connections
   useEffect(() => {
     const fetchProfile = async () => {
       if (user) {
@@ -48,13 +61,113 @@ const Dashboard = () => {
           const { profile } = await apiClient.getProfile();
           setProfile(profile);
         } catch (error) {
-          console.log('Profile not found:', error);
+          // Profile not found, user can create one later
         }
       }
     };
 
+    const testConnections = async () => {
+      if (user && connections.length > 0) {
+        setConnectionTesting(true);
+        
+        try {
+          // Test Spotify connection if it exists
+          if (connections.includes('spotify')) {
+            const result = await apiClient.testSpotifyConnection();
+            
+            if (result.connected) {
+              setActuallyConnected(prev => [...prev.filter(p => p !== 'spotify'), 'spotify']);
+              
+              // Fetch Spotify data
+              fetchSpotifyData();
+            } else {
+              setActuallyConnected(prev => prev.filter(p => p !== 'spotify'));
+              
+              // Show toast about connection issue
+              if (result.reason) {
+                toast({
+                  title: "Spotify Connection Issue",
+                  description: "Your Spotify connection needs to be refreshed. Please reconnect.",
+                  variant: "destructive",
+                });
+              }
+            }
+          }
+        } catch (error) {
+          setActuallyConnected([]);
+        } finally {
+          setConnectionTesting(false);
+        }
+      } else {
+        setActuallyConnected([]);
+        setConnectionTesting(false);
+      }
+    };
+
     fetchProfile();
-  }, [user]);
+    testConnections();
+  }, [user, connections]);
+
+  const fetchSpotifyData = async () => {
+    setSpotifyDataLoading(true);
+    try {
+      const [profileResult, statsResult, topTracksResult, topArtistsResult, currentPlaybackResult] = await Promise.allSettled([
+        apiClient.getSpotifyProfile(),
+        apiClient.getSpotifyStats(),
+        apiClient.getSpotifyTopTracks('medium_term', 5),
+        apiClient.getSpotifyTopArtists('medium_term', 5),
+        apiClient.getSpotifyCurrentPlayback()
+      ]);
+
+      const newSpotifyData: any = {};
+      
+      if (profileResult.status === 'fulfilled') {
+        newSpotifyData.profile = profileResult.value.profile;
+      }
+      
+      if (statsResult.status === 'fulfilled') {
+        newSpotifyData.stats = statsResult.value.stats;
+      }
+      
+      if (topTracksResult.status === 'fulfilled') {
+        newSpotifyData.topTracks = topTracksResult.value.tracks;
+      }
+      
+      if (topArtistsResult.status === 'fulfilled') {
+        newSpotifyData.topArtists = topArtistsResult.value.artists;
+      }
+      
+      if (currentPlaybackResult.status === 'fulfilled') {
+        newSpotifyData.currentPlayback = currentPlaybackResult.value;
+      }
+
+      setSpotifyData(newSpotifyData);
+    } catch (error) {
+      // Failed to fetch Spotify data, show error state in UI
+    } finally {
+      setSpotifyDataLoading(false);
+    }
+  };
+
+  // Handle Spotify connection callback
+  useEffect(() => {
+    const connected = searchParams.get('connected');
+    if (connected === 'spotify') {
+      toast({
+        title: "Spotify Connected!",
+        description: "Your Spotify account has been successfully connected.",
+      });
+      
+      // Clear the callback parameter
+      setSearchParams({});
+      
+      // Refresh the page to get updated user data with new connections
+      // This ensures the auth context gets the latest connection status
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -72,8 +185,13 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center animate-pulse">
-          <Music className="w-6 h-6 text-primary-foreground" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center animate-pulse">
+            <Music className="w-6 h-6 text-primary-foreground" />
+          </div>
+          <p className="text-sm text-muted-foreground animate-pulse">
+            Loading your dashboard...
+          </p>
         </div>
       </div>
     );
@@ -164,54 +282,298 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {/* Welcome Card */}
-        <Card className="mb-8 bg-gradient-card backdrop-blur-sm border-glass-border">
-          <CardHeader>
-            <CardTitle className="text-2xl bg-gradient-primary bg-clip-text text-transparent">
-              Your Music Dashboard
-            </CardTitle>
-            <CardDescription>
-              Connect your music platforms to start tracking your listening
-              journey
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-glass-bg/30 border border-glass-border">
-                <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                  <Music className="w-5 h-5 text-green-400" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Spotify</p>
-                  <p className="text-xs text-muted-foreground">Coming Soon</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-glass-bg/30 border border-glass-border">
-                <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
-                  <Music className="w-5 h-5 text-purple-400" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Apple Music</p>
-                  <p className="text-xs text-muted-foreground">Coming Soon</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-glass-bg/30 border border-glass-border">
-                <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center">
-                  <Music className="w-5 h-5 text-orange-400" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Deezer</p>
-                  <p className="text-xs text-muted-foreground">Coming Soon</p>
-                </div>
-              </div>
+        {connectionTesting ? (
+          /* Testing Connections State */
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+            <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center animate-pulse mb-4">
+              <Music className="w-6 h-6 text-primary-foreground" />
             </div>
-          </CardContent>
-        </Card>
+            <h2 className="text-2xl font-bold mb-2">Verifying your connections...</h2>
+            <p className="text-muted-foreground">
+              Checking if your Spotify connection is still active
+            </p>
+          </div>
+        ) : actuallyConnected.length === 0 ? (
+          /* No Connections State */
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+            <div className="w-24 h-24 bg-muted/50 rounded-full flex items-center justify-center mb-6">
+              <Music className="w-12 h-12 text-muted-foreground" />
+            </div>
+            <h2 className="text-3xl font-bold mb-4">Oops! You're not connected to any platform</h2>
+            <p className="text-muted-foreground mb-8 max-w-md">
+              Connect your music streaming platforms to start analyzing your listening habits and discover insights about your music taste.
+            </p>
+            
+            {/* Connection Options */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl">
+              <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" 
+                    onClick={() => window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/auth/spotify`}>
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
+                    <Music className="w-8 h-8 text-green-400" />
+                  </div>
+                  <h3 className="font-semibold mb-2">Spotify</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Connect your Spotify account</p>
+                  <Button className="bg-green-600 hover:bg-green-700 text-white w-full">
+                    Connect Spotify
+                  </Button>
+                </div>
+              </Card>
 
-        {/* Dashboard Preview */}
-        <DashboardPreview />
+              <Card className="p-6 opacity-50">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mb-4">
+                    <Music className="w-8 h-8 text-purple-400" />
+                  </div>
+                  <h3 className="font-semibold mb-2">Apple Music</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Coming soon</p>
+                  <Button disabled className="w-full">
+                    Coming Soon
+                  </Button>
+                </div>
+              </Card>
+
+              <Card className="p-6 opacity-50">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mb-4">
+                    <Music className="w-8 h-8 text-orange-400" />
+                  </div>
+                  <h3 className="font-semibold mb-2">Deezer</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Coming soon</p>
+                  <Button disabled className="w-full">
+                    Coming Soon
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </div>
+        ) : (
+          /* Connected State */
+          <div className="space-y-6">
+            {/* Spotify Profile Section */}
+            {actuallyConnected.includes('spotify') && (
+              <Card className="bg-gradient-to-r from-green-500/10 to-green-600/10 border-green-500/20">
+                <CardHeader>
+                  <div className="flex items-center gap-4">
+                    {spotifyData.profile?.images?.[0] ? (
+                      <img 
+                        src={spotifyData.profile.images[0].url} 
+                        alt="Spotify Profile"
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
+                        <Music className="w-8 h-8 text-green-400" />
+                      </div>
+                    )}
+                    <div>
+                      <CardTitle className="text-xl flex items-center gap-2">
+                        <span>
+                          {spotifyData.profile?.display_name ? 
+                            `${spotifyData.profile.display_name}'s Spotify` : 
+                            'Connected to Spotify'
+                          }
+                        </span>
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      </CardTitle>
+                      <CardDescription>
+                        {spotifyData.profile?.followers?.total ? 
+                          `${spotifyData.profile.followers.total.toLocaleString()} followers` :
+                          'Ready to analyze your music data'
+                        }
+                      </CardDescription>
+                      {spotifyData.currentPlayback?.isPlaying && (
+                        <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
+                          <Music className="w-3 h-3" />
+                          Currently playing: {spotifyData.currentPlayback.track?.name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            )}
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Listening Time (Est.)</CardDescription>
+                  <CardTitle className="text-2xl">
+                    {spotifyDataLoading ? '...' : 
+                     spotifyData.stats ? `${Math.round(spotifyData.stats.listeningTimeEstimate / 60)}h` : '--'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    <TrendingUp className="w-4 h-4 inline mr-1" />
+                    {spotifyDataLoading ? 'Loading...' : 
+                     spotifyData.stats ? 'Based on top tracks' : 'Connect Spotify for data'}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Top Tracks</CardDescription>
+                  <CardTitle className="text-2xl">
+                    {spotifyDataLoading ? '...' : 
+                     spotifyData.stats ? spotifyData.stats.totalTracks : '--'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    <Music className="w-4 h-4 inline mr-1" />
+                    {spotifyDataLoading ? 'Loading...' : 
+                     spotifyData.stats ? 'In your library' : 'Connect Spotify for data'}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Top Genre</CardDescription>
+                  <CardTitle className="text-2xl">
+                    {spotifyDataLoading ? '...' : 
+                     spotifyData.stats?.topGenres?.[0] ? 
+                       spotifyData.stats.topGenres[0].genre.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 
+                       '--'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    <TrendingUp className="w-4 h-4 inline mr-1" />
+                    {spotifyDataLoading ? 'Loading...' : 
+                     spotifyData.stats?.topGenres?.[0] ? `${spotifyData.stats.topGenres[0].count} artists` : 'Connect Spotify for data'}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Top Artists</CardDescription>
+                  <CardTitle className="text-2xl">
+                    {spotifyDataLoading ? '...' : 
+                     spotifyData.stats ? spotifyData.stats.totalArtists : '--'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    <User className="w-4 h-4 inline mr-1" />
+                    {spotifyDataLoading ? 'Loading...' : 
+                     spotifyData.stats ? 'In your rotation' : 'Connect Spotify for data'}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Top Tracks */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Your Top Tracks
+                </CardTitle>
+                <CardDescription>
+                  Your most played songs this month
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {spotifyDataLoading ? (
+                  <div className="text-center py-8">
+                    <Music className="w-8 h-8 mx-auto mb-4 opacity-50 animate-pulse" />
+                    <p className="text-muted-foreground">Loading your top tracks...</p>
+                  </div>
+                ) : spotifyData.topTracks?.length ? (
+                  <div className="space-y-3">
+                    {spotifyData.topTracks.slice(0, 5).map((track: any, index: number) => (
+                      <div key={track.id} className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-sm font-medium">
+                          {index + 1}
+                        </div>
+                        {track.album.images?.[0] && (
+                          <img 
+                            src={track.album.images[0].url} 
+                            alt={track.album.name}
+                            className="w-12 h-12 rounded object-cover"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{track.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {track.artists.map((artist: any) => artist.name).join(', ')}
+                          </p>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {Math.floor(track.duration_ms / 60000)}:
+                          {Math.floor((track.duration_ms % 60000) / 1000).toString().padStart(2, '0')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No top tracks data available</p>
+                    <p className="text-sm">Listen to more music to see your favorites</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Top Artists */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Your Top Artists
+                </CardTitle>
+                <CardDescription>
+                  Artists you listen to the most
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {spotifyDataLoading ? (
+                  <div className="text-center py-8">
+                    <User className="w-8 h-8 mx-auto mb-4 opacity-50 animate-pulse" />
+                    <p className="text-muted-foreground">Loading your top artists...</p>
+                  </div>
+                ) : spotifyData.topArtists?.length ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {spotifyData.topArtists.slice(0, 4).map((artist: any) => (
+                      <div key={artist.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                        {artist.images?.[0] && (
+                          <img 
+                            src={artist.images[0].url} 
+                            alt={artist.name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{artist.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {artist.followers.total.toLocaleString()} followers
+                          </p>
+                          {artist.genres.length > 0 && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {artist.genres.slice(0, 2).join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No top artists data available</p>
+                    <p className="text-sm">Listen to more music to see your favorites</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </main>
 
       {/* Upload Dialog */}

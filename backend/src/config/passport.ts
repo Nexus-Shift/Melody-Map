@@ -78,7 +78,6 @@ passport.use(
         user = await db("users").where("id", userId).first();
         return done(null, user);
       } catch (error) {
-        console.error("Google OAuth error:", error);
         return done(error, false);
       }
     }
