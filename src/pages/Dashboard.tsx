@@ -31,7 +31,6 @@ import { AvatarUpload } from "@/components/AvatarUpload";
 import DefaultAvatar from "@/components/DefaultAvatar";
 import { PlatformSelector } from "@/components/PlatformSelector";
 import { ComparisonPanel } from "@/components/ComparisonPanel";
-import { OverallListeningPanel } from "@/components/OverallListeningPanel";
 import {
   mockDeezerProfile,
   mockDeezerTracks,
