@@ -6,6 +6,49 @@ import { SpotifyTokenRefreshService } from '../services/spotifyTokenRefresh';
 
 const router = express.Router();
 
+// Get Spotify connection status with detailed token info
+router.get('/spotify/status', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.authUser?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const connection = await db('platform_connections')
+      .where({ user_id: userId, platform: 'spotify' })
+      .first();
+
+    if (!connection) {
+      return res.json({
+        connected: false,
+        message: 'Spotify not connected'
+      });
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(connection.token_expires_at);
+    const isExpired = expiresAt <= now;
+    const expiresInSeconds = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
+
+    res.json({
+      connected: true,
+      isActive: connection.is_active,
+      externalId: connection.external_id,
+      tokenStatus: {
+        isExpired,
+        expiresAt: connection.token_expires_at,
+        expiresInSeconds,
+        expiresInMinutes: Math.floor(expiresInSeconds / 60),
+        willAutoRefresh: expiresInSeconds < 300 // Less than 5 minutes
+      },
+      lastUpdated: connection.updated_at,
+      connectedAt: connection.created_at
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to check Spotify status' });
+  }
+});
+
 // Test endpoint to verify backend is accessible
 router.get('/test-callback', (req, res) => {
   res.json({ 
@@ -138,27 +181,40 @@ router.get('/spotify/callback', async (req, res) => {
     if (userId && tokenData.access_token && tokenData.refresh_token) {
       const expiresAt = new Date(Date.now() + (tokenData.expires_in || 3600) * 1000);
       
-      await db('platform_connections')
-        .insert({
-          id: db.raw('gen_random_uuid()'),
+      // Check if connection exists
+      const existingConnection = await db('platform_connections')
+        .where({ user_id: userId, platform: 'spotify' })
+        .first();
+
+      if (existingConnection) {
+        // Update existing connection
+        await db('platform_connections')
+          .where({ user_id: userId, platform: 'spotify' })
+          .update({
+            external_id: spotifyUser.id,
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
+            token_expires_at: expiresAt,
+            is_active: true,
+            updated_at: new Date()
+          });
+      } else {
+        // Insert new connection
+        await db('platform_connections').insert({
+          id: uuidv4(),
           user_id: userId,
           platform: 'spotify',
           external_id: spotifyUser.id,
           access_token: tokenData.access_token,
           refresh_token: tokenData.refresh_token,
           token_expires_at: expiresAt,
-          is_active: true
-        })
-        .onConflict(['user_id', 'platform'])
-        .merge({
-          external_id: spotifyUser.id,
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          token_expires_at: expiresAt,
           is_active: true,
-          updated_at: db.fn.now()
+          created_at: new Date(),
+          updated_at: new Date()
         });
+      }
       
+      console.log(`Spotify connected for user ${userId}`);
     }
 
     res.redirect(`${process.env.FRONTEND_URL}/dashboard?connected=spotify`);
@@ -260,7 +316,10 @@ router.get('/test-connection', authenticate, async (req: AuthRequest, res) => {
       if (response.status === 401) {
         await db('platform_connections')
           .where({ user_id: userId, platform: 'spotify' })
-          .update({ is_active: false });
+          .update({ 
+            is_active: false,
+            updated_at: new Date()
+          });
       }
       
       res.json({ 
@@ -273,6 +332,37 @@ router.get('/test-connection', authenticate, async (req: AuthRequest, res) => {
       connected: false, 
       reason: 'Connection test failed' 
     });
+  }
+});
+
+// Disconnect Spotify
+router.post('/spotify/disconnect', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.authUser?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const result = await db('platform_connections')
+      .where({ user_id: userId, platform: 'spotify' })
+      .update({ 
+        is_active: false,
+        updated_at: new Date()
+      });
+
+    if (result > 0) {
+      res.json({ 
+        message: 'Spotify disconnected successfully',
+        success: true
+      });
+    } else {
+      res.status(404).json({ 
+        error: 'No Spotify connection found',
+        success: false
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to disconnect Spotify' });
   }
 });
 

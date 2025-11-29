@@ -239,6 +239,148 @@ class ApiClient {
       };
     }>("/spotify/stats");
   }
+
+  // Deezer Connection Methods
+  async testDeezerConnection() {
+    return this.request<{
+      connected: boolean;
+      reason?: string;
+      deezerUser?: {
+        id: number;
+        name?: string;
+      };
+    }>("/auth/test-deezer-connection");
+  }
+
+  // Deezer Data Methods
+  async getDeezerProfile() {
+    return this.request<{
+      profile: {
+        id: number;
+        name: string;
+        email?: string;
+        country?: string;
+        picture?: string;
+        picture_small?: string;
+        picture_medium?: string;
+        picture_big?: string;
+        picture_xl?: string;
+      };
+    }>("/deezer/profile");
+  }
+
+  async getDeezerTracks(limit: number = 50) {
+    return this.request<{
+      tracks: Array<{
+        id: number;
+        title: string;
+        duration: number;
+        preview: string;
+        link: string;
+        rank: number;
+        artist: {
+          id: number;
+          name: string;
+          picture?: string;
+        };
+        album: {
+          id: number;
+          title: string;
+          cover?: string;
+          cover_medium?: string;
+          cover_big?: string;
+        };
+      }>;
+    }>(`/deezer/tracks?limit=${limit}`);
+  }
+
+  async getDeezerArtists(limit: number = 50) {
+    return this.request<{
+      artists: Array<{
+        id: number;
+        name: string;
+        link: string;
+        picture?: string;
+        picture_medium?: string;
+        picture_big?: string;
+        nb_fan?: number;
+        nb_album?: number;
+      }>;
+    }>(`/deezer/artists?limit=${limit}`);
+  }
+
+  async getDeezerAlbums(limit: number = 50) {
+    return this.request<{
+      albums: Array<{
+        id: number;
+        title: string;
+        link: string;
+        cover?: string;
+        cover_medium?: string;
+        cover_big?: string;
+        genre_id?: number;
+        fans?: number;
+        release_date?: string;
+        artist: {
+          id: number;
+          name: string;
+        };
+      }>;
+    }>(`/deezer/albums?limit=${limit}`);
+  }
+
+  async getDeezerPlaylists(limit: number = 50) {
+    return this.request<{
+      playlists: Array<{
+        id: number;
+        title: string;
+        description?: string;
+        duration: number;
+        public: boolean;
+        nb_tracks: number;
+        fans?: number;
+        link: string;
+        picture?: string;
+        picture_medium?: string;
+        picture_big?: string;
+        creator: {
+          id: number;
+          name: string;
+        };
+      }>;
+    }>(`/deezer/playlists?limit=${limit}`);
+  }
+
+  async getDeezerRecentlyPlayed(limit: number = 50) {
+    return this.request<{
+      tracks: Array<{
+        id: number;
+        title: string;
+        duration: number;
+        artist: {
+          id: number;
+          name: string;
+        };
+        album: {
+          id: number;
+          title: string;
+          cover?: string;
+        };
+      }>;
+    }>(`/deezer/recently-played?limit=${limit}`);
+  }
+
+  async getDeezerStats() {
+    return this.request<{
+      stats: {
+        totalTracks: number;
+        totalArtists: number;
+        totalAlbums: number;
+        topGenres: Array<{ genre: string; count: number }>;
+        listeningTimeEstimate: number;
+      };
+    }>("/deezer/stats");
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

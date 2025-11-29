@@ -12,7 +12,7 @@ cloudinary.config({
 
 // Verify configuration
 if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-  console.warn('⚠️  Cloudinary configuration missing. Avatar upload will not work.');
+  console.warn('Cloudinary configuration missing. Avatar upload will not work.');
   console.warn('Please add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your .env file');
 }
 

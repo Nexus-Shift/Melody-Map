@@ -17,6 +17,7 @@ interface AuthContextType {
   signOut: () => Promise<{ error: any }>;
   loading: boolean;
   canChangePassword: () => Promise<boolean>;
+  refreshUser: () => Promise<void>;
 }
 
 export const useAuth = () => {

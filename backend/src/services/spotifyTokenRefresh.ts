@@ -37,11 +37,17 @@ export class SpotifyTokenRefreshService {
       const tokenData = await response.json() as SpotifyTokenResponse;
 
       if (!response.ok || tokenData.error) {
+        console.error(`Token refresh failed for connection ${connectionId}:`, tokenData.error);
+        
         // If refresh token is invalid, mark connection as inactive
         if (tokenData.error === 'invalid_grant') {
           await db('platform_connections')
             .where({ id: connectionId })
-            .update({ is_active: false });
+            .update({ 
+              is_active: false,
+              updated_at: new Date()
+            });
+          console.warn(`Connection ${connectionId} marked as inactive due to invalid grant`);
         }
         
         return false;
@@ -76,14 +82,33 @@ export class SpotifyTokenRefreshService {
       const expiringConnections = await db('platform_connections')
         .where({ platform: 'spotify', is_active: true })
         .where('token_expires_at', '<', expiringSoon)
-        .select('id');
+        .select('id', 'user_id');
+
+      if (expiringConnections.length > 0) {
+        console.log(`Refreshing ${expiringConnections.length} expiring Spotify token(s)...`);
+      }
+
+      let successCount = 0;
+      let failCount = 0;
 
       for (const connection of expiringConnections) {
-        await this.refreshToken(connection.id);
+        const success = await this.refreshToken(connection.id);
+        if (success) {
+          successCount++;
+          console.log(`Refreshed token for connection ${connection.id}`);
+        } else {
+          failCount++;
+          console.log(`Failed to refresh token for connection ${connection.id}`);
+        }
         // Add small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 100));
       }
+
+      if (expiringConnections.length > 0) {
+        console.log(`Token refresh complete: ${successCount} succeeded, ${failCount} failed`);
+      }
     } catch (error) {
+      console.error('Error in refreshAllExpiredTokens:', error);
     }
   }
 

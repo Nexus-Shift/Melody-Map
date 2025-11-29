@@ -120,6 +120,7 @@ router.post(
           username: finalUsername,
           displayName: finalUsername,
           auth_provider: "local",
+          connectedPlatforms: [], // New users have no connections
         },
       });
     } catch (error) {
@@ -168,6 +169,15 @@ router.post(
 
       const profile = await db("profiles").where("user_id", user.id).first();
 
+      // Get connected platforms
+      const allConnections = await db("platform_connections")
+        .where({ user_id: user.id, is_active: true })
+        .select('platform', 'token_expires_at');
+      
+      const connections = allConnections
+        .filter(conn => new Date(conn.token_expires_at) > new Date())
+        .map(conn => conn.platform);
+
       // Generate JWT and set cookie
       const token = generateToken(user.id);
       setAuthCookie(res, token);
@@ -181,6 +191,7 @@ router.post(
           displayName:
             profile?.display_name || user.username || user.email.split("@")[0],
           auth_provider: user.auth_provider,
+          connectedPlatforms: connections,
         },
       });
     } catch (error) {
@@ -214,10 +225,14 @@ router.get("/me", async (req: express.Request, res: express.Response) => {
 
     const profile = await db("profiles").where("user_id", user.id).first();
     
-    // Get connected platforms
-    const connections = await db("platform_connections")
+    // Get connected platforms (only those with valid, non-expired tokens)
+    const allConnections = await db("platform_connections")
       .where({ user_id: user.id, is_active: true })
-      .pluck("platform");
+      .select('platform', 'token_expires_at');
+    
+    const connections = allConnections
+      .filter(conn => new Date(conn.token_expires_at) > new Date())
+      .map(conn => conn.platform);
 
     res.json({
       user: {

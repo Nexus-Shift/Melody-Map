@@ -92,6 +92,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const { user } = await apiClient.getCurrentUser();
+      setUser(user);
+    } catch (error) {
+      // If refresh fails, user might be logged out
+      setUser(null);
+    }
+  };
+
   const signOut = async () => {
     try {
       await apiClient.signOut();
@@ -123,6 +133,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         signOut,
         loading,
         canChangePassword,
+        refreshUser,
       }}
     >
       {children}

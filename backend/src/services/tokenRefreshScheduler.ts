@@ -10,18 +10,31 @@ export class TokenRefreshScheduler {
    */
   static start(): void {
     if (this.intervalId) {
+      console.log('Token refresh scheduler already running');
       return;
     }
     
+    console.log('Starting token refresh scheduler...');
+    
     // Run immediately on start
-    SpotifyTokenRefreshService.refreshAllExpiredTokens();
-    this.cleanupExpiredConnections();
+    this.runRefreshCycle();
     
     // Then run every 30 minutes
     this.intervalId = setInterval(() => {
-      SpotifyTokenRefreshService.refreshAllExpiredTokens();
-      this.cleanupExpiredConnections();
+      this.runRefreshCycle();
     }, 30 * 60 * 1000); // 30 minutes
+    
+    console.log('Token refresh scheduler started (runs every 30 minutes)');
+  }
+
+  /**
+   * Run a complete refresh cycle
+   */
+  private static async runRefreshCycle(): Promise<void> {
+    console.log(`Token refresh cycle starting at ${new Date().toISOString()}`);
+    await SpotifyTokenRefreshService.refreshAllExpiredTokens();
+    await this.cleanupExpiredConnections();
+    console.log('Token refresh cycle completed');
   }
 
   /**
@@ -34,11 +47,16 @@ export class TokenRefreshScheduler {
       const result = await db('platform_connections')
         .where('token_expires_at', '<', sevenDaysAgo)
         .where('is_active', true)
-        .update({ is_active: false });
+        .update({ 
+          is_active: false,
+          updated_at: new Date()
+        });
 
       if (result > 0) {
+        console.log(`Cleaned up ${result} expired connection(s)`);
       }
     } catch (error) {
+      console.error('Error cleaning up expired connections:', error);
     }
   }
 
@@ -49,6 +67,14 @@ export class TokenRefreshScheduler {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
+      console.log('Token refresh scheduler stopped');
     }
+  }
+
+  /**
+   * Get scheduler status
+   */
+  static isRunning(): boolean {
+    return this.intervalId !== null;
   }
 }
